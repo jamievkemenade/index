@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Tracker 💪</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --card: #22222e;
+    --accent: #ff6b35;
+    --accent2: #ffb347;
+    --green: #4ade80;
+    --text: #f0eee8;
+    --muted: #7a7a8c;
+    --border: #2e2e3e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a1a22 0%, #0f0f13 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 24px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .date-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .streak-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .streak-chip {
+    background: rgba(255,107,53,0.15);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .container { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+
+  /* Motivatie */
+  .motivatie {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.5;
+    font-style: italic;
+    animation: fadeSlide 0.5s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Celebrate */
+  .celebrate {
+    display: none;
+    background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,179,71,0.1));
+    border: 1px solid rgba(255,107,53,0.4);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .celebrate.show { display: block; animation: popIn 0.4s ease; }
+  .celebrate h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 2px; color: var(--accent); }
+  .celebrate p { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+  @keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* Progress ring */
+  .progress-section {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    border: 1px solid var(--border);
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: 90px; height: 90px;
+    flex-shrink: 0;
+  }
+
+  .ring-wrap svg { transform: rotate(-90deg); }
+
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .ring-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .ring-label { font-size: 0.65rem; color: var(--muted); }
+
+  .progress-text h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+  .progress-text p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+  circle { transition: stroke-dashoffset 0.5s ease; }
+
+  /* Section title */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin: 28px 0 12px;
+    text-transform: uppercase;
+  }
+
+  /* Exercise cards */
+  .exercise-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.15s;
+  }
+
+  .exercise-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 4px 0 0 4px;
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.3s ease;
+  }
+
+  .exercise-card.completed::before { transform: scaleY(1); }
+  .exercise-card.completed { border-color: rgba(74,222,128,0.25); background: #1e2a22; }
+  .exercise-card:active { transform: scale(0.98); }
+
+  .ex-header { display: flex; align-items: flex-start; gap: 14px; }
+
+  .checkbox {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s;
+    margin-top: 2px;
+  }
+
+  .completed .checkbox { background: var(--green); border-color: var(--green); }
+
+  .checkbox svg { opacity: 0; transform: scale(0.5); transition: all 0.2s; }
+  .completed .checkbox svg { opacity: 1; transform: scale(1); }
+
+  .ex-info { flex: 1; }
+  .ex-name { font-size: 1rem; font-weight: 600; margin-bottom: 3px; transition: color 0.2s; }
+  .completed .ex-name { color: var(--green); }
+  .ex-sets { font-size: 0.8rem; color: var(--muted); }
+
+  .toggle-icon { color: var(--muted); font-size: 0.75rem; margin-top: 6px; transition: transform 0.2s; }
+  .exercise-card.open .toggle-icon { transform: rotate(180deg); }
+
+  .ex-desc {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    display: none;
+  }
+  .exercise-card.open .ex-desc { display: block; }
+  .ex-desc .tip { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .ex-desc .tip span:first-child { color: var(--accent); }
+
+  /* Week grid */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .week-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .week-cell-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .week-cell.today .week-cell-label { color: var(--accent); font-weight: 700; }
+
+  .week-cell-dot {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .week-cell.today .week-cell-dot { border: 2px solid var(--accent); }
+  .week-cell.partial .week-cell-dot { background: rgba(255,107,53,0.35); }
+  .week-cell.full .week-cell-dot { background: var(--accent); }
+
+  .week-goal {
+    display: none;
+    background: linear-gradient(135deg, rgba(250,204,21,0.15), rgba(255,107,53,0.1));
+    border: 1px solid rgba(250,204,21,0.5);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .week-goal.show { display: block; animation: popIn 0.4s ease; }
+  .week-goal h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 2px; color: #facc15; }
+  .week-goal p { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+  /* Reset btn */
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<canvas id="confettiCanvas" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;"></canvas>
+
+<header>
+  <div class="header-top">
+    <h1>Workout Tracker</h1>
+    <span class="date-label" id="dateLabel"></span>
+  </div>
+  <div class="streak-bar">
+    <span class="streak-chip" id="streakChip">🔥 0 dagen streak</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="motivatie" id="motivatie"></div>
+
+  <div class="celebrate" id="celebrate">
+    <h3>🎉 Workout voltooid!</h3>
+    <p>Goed bezig! Je hebt alle oefeningen afgevinkt voor vandaag.</p>
+  </div>
+
+  <div class="week-goal" id="weekGoal">
+    <h3>🏆 Weekdoel gehaald!</h3>
+    <p>3 workouts deze week — je bent een kracht! Geniet van je rust en kom volgende week terug.</p>
+  </div>
+
+  <div class="progress-section">
+    <div class="ring-wrap">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="38" fill="none" stroke="#2e2e3e" stroke-width="8"/>
+        <circle id="progressRing" cx="45" cy="45" r="38" fill="none"
+          stroke="url(#grad)" stroke-width="8"
+          stroke-linecap="round"
+          stroke-dasharray="238.76"
+          stroke-dashoffset="238.76"/>
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#ff6b35"/>
+            <stop offset="100%" style="stop-color:#ffb347"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="ring-center">
+        <span class="ring-pct" id="ringPct">0%</span>
+        <span class="ring-label">klaar</span>
+      </div>
+    </div>
+    <div class="progress-text">
+      <h2 id="progressHeadline">Klaar om te starten?</h2>
+      <p id="progressSub">3× per week trainen voor zichtbaar resultaat in 6–8 weken!</p>
+    </div>
+  </div>
+
+  <p class="section-title">Oefeningen — Tik om te openen / vink af</p>
+  <div id="exerciseList"></div>
+
+  <p class="section-title">Voortgang deze week</p>
+  <div class="week-grid" id="weekGrid"></div>
+
+  <button class="reset-btn" onclick="resetToday()">↺ Vandaag resetten</button>
+
+</div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const TODAY = new Date().toISOString().split('T')[0];
+
+const EXERCISES = [
+  {
+    id: 'bent_over_rows',
+    name: 'Bent Over Rows',
+    sets: '12 herhalingen × 3 sets',
+    focus: 'Bovenrug & zijkant rug',
+    tips: ['Pak je gewichtjes', 'Buig iets voorover met een rechte rug', 'Trek de gewichten langs je lichaam omhoog']
+  },
+  {
+    id: 'reverse_flys',
+    name: 'Reverse Flys',
+    sets: '12–15 herhalingen × 3 sets',
+    focus: 'Achterkant schouders & upper back',
+    tips: ['Licht voorover buigen', 'Armen zijwaarts openen alsof je vleugels maakt', 'Supergoed voor dat gebied achter de oksel']
+  },
+  {
+    id: 'shoulder_press',
+    name: 'Shoulder Press',
+    sets: '10–12 herhalingen × 3 sets',
+    focus: 'Schouders',
+    tips: ['Gewichtjes naast je schouders houden', 'Recht omhoog duwen', 'Maakt schouders strakker zodat alles mooier oogt']
+  },
+  {
+    id: 'plank_roller',
+    name: 'Plank met Roller (ab wheel)',
+    sets: '6–10 rustige herhalingen',
+    focus: 'Core & houding',
+    tips: ['Begin klein — niet te ver uitrollen', 'Rug recht houden', 'Je kunt de roller ook voor je rug & core gebruiken!']
+  },
+  {
+    id: 'arm_circles',
+    name: 'Arm Circles Burnout',
+    sets: '30 sec vooruit + 30 sec achteruit × 3 rondes',
+    focus: 'Schouders & bovenrug burnout',
+    tips: ['Armen gestrekt houden', 'Kleine rondjes vooruit 30 sec', 'Daarna achteruit 30 sec — brandt écht! 😅']
+  }
+];
+
+const QUOTES = [
+  'Je hoeft het niet perfect te doen. Je hoeft het alleen maar te doen.',
+  'Elke herhaling brengt je dichter bij de versie van jezelf die je wil zijn.',
+  'Je wordt niet zwakker van rust. Je wordt sterker.',
+  'Begin gewoon. De motivatie komt vanzelf als je eenmaal bezig bent.',
+  'Over 6 weken zul je blij zijn dat je vandaag begonnen bent.',
+  'Consistentie verslaat altijd perfectie.',
+  'Je lichaam kan bijna alles aan. Het is je hoofd dat je moet overtuigen.',
+  'Kleine stappen tellen ook. Elke workout is een ja tegen jezelf.',
+  'Hoe je je voelt ná de workout is altijd de moeite waard.',
+  'Jij bent de enige die dit voor jezelf kan doen — en je doet het.',
+  'Progressie, geen perfectie.',
+  'Trots zijn op jezelf begint met doen wat je zei dat je zou doen.'
+];
+
+// ── Opslag ──────────────────────────────────────────────────────────────────
+// Werkt ook op Android via content:// (geen localStorage)
+
+let _mem = {};
+
+function getStorage() {
+  try {
+    const raw = localStorage.getItem('workoutData');
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) {
+    return _mem;
+  }
+}
+
+function saveStorage(data) {
+  _mem = data;
+  try { localStorage.setItem('workoutData', JSON.stringify(data)); } catch(e) {}
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function getMonday() {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() - ((day + 6) % 7));
+  return d;
+}
+
+// ── Bouwen ──────────────────────────────────────────────────────────────────
+
+function buildDateLabel() {
+  const opts = { weekday: 'long', day: 'numeric', month: 'long' };
+  document.getElementById('dateLabel').textContent =
+    new Date().toLocaleDateString('nl-NL', opts);
+}
+
+function buildMotivatie() {
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById('motivatie').textContent = '"' + q + '"';
+}
+
+function buildExerciseCards() {
+  const list = document.getElementById('exerciseList');
+  const data = getStorage();
+  const completed = data[TODAY] || [];
+
+  list.innerHTML = '';
+  EXERCISES.forEach(function(ex) {
+    const done = completed.indexOf(ex.id) !== -1;
+    const card = document.createElement('div');
+    card.className = 'exercise-card' + (done ? ' completed' : '');
+
+    card.innerHTML =
+      '<div class="ex-header">' +
+        '<div class="checkbox">' +
+          '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
+            '<polyline points="2,7 5.5,11 12,3" stroke="#0f0f13" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+        '</div>' +
+        '<div class="ex-info">' +
+          '<div class="ex-name">' + ex.name + '</div>' +
+          '<div class="ex-sets">' + ex.sets + ' · ' + ex.focus + '</div>' +
+        '</div>' +
+        '<div class="toggle-icon">▼</div>' +
+      '</div>' +
+      '<div class="ex-desc">' +
+        ex.tips.map(function(t) {
+          return '<div class="tip"><span>🔹</span><span>' + t + '</span></div>';
+        }).join('') +
+      '</div>';
+
+    // Open/sluit tips
+    card.addEventListener('click', function() {
+      card.classList.toggle('open');
+    });
+
+    // Vink af
+    card.querySelector('.checkbox').addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isDone = card.classList.contains('completed');
+      card.classList.toggle('completed', !isDone);
+      toggleExercise(ex.id, !isDone);
+      updateProgress();
+    });
+
+    list.appendChild(card);
+  });
+
+  updateProgress();
+}
+
+function buildWeekGrid() {
+  const grid = document.getElementById('weekGrid');
+  const data = getStorage();
+  const doneDays = data['done_days'] || [];
+  const todayKey = TODAY;
+  const monday = getMonday();
+  const dayNames = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
+
+  grid.innerHTML = '';
+  for (var i = 0; i < 7; i++) {
+    const dt = new Date(monday);
+    dt.setDate(monday.getDate() + i);
+    const key = dt.toISOString().split('T')[0];
+    const dayData = data[key] || [];
+
+    const cell = document.createElement('div');
+    cell.className = 'week-cell';
+    if (key === todayKey) cell.classList.add('today');
+    if (doneDays.indexOf(key) !== -1) cell.classList.add('full');
+    else if (dayData.length > 0) cell.classList.add('partial');
+
+    cell.innerHTML =
+      '<span class="week-cell-label">' + dayNames[i] + '</span>' +
+      '<div class="week-cell-dot"></div>';
+
+    grid.appendChild(cell);
+  }
+}
+
+function getWeekKey(date) {
+  // Geeft "YYYY-Www" terug, bijv. "2026-W20"
+  var d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  var week1 = new Date(d.getFullYear(), 0, 4);
+  var weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return d.getFullYear() + '-W' + (weekNum < 10 ? '0' : '') + weekNum;
+}
+
+function getWorkoutsThisWeek() {
+  var data = getStorage();
+  var doneDays = data['done_days'] || [];
+  var monday = getMonday();
+  var count = 0;
+  for (var i = 0; i < 7; i++) {
+    var dt = new Date(monday);
+    dt.setDate(monday.getDate() + i);
+    var key = dt.toISOString().split('T')[0];
+    if (doneDays.indexOf(key) !== -1) count++;
+  }
+  return count;
+}
+
+function buildStreakChip() {
+  var data = getStorage();
+  var doneDays = data['done_days'] || [];
+
+  // Tel weken waarin 3+ workouts zijn gedaan
+  var weekCounts = {};
+  doneDays.forEach(function(day) {
+    var wk = getWeekKey(new Date(day));
+    weekCounts[wk] = (weekCounts[wk] || 0) + 1;
+  });
+
+  // Streak = opeenvolgende weken (vanaf huidige) met 3+
+  var streak = 0;
+  var now = new Date();
+  for (var i = 0; i < 52; i++) {
+    var d = new Date(now);
+    d.setDate(now.getDate() - i * 7);
+    var wk = getWeekKey(d);
+    // Huidige week telt mee als je al 3x hebt
+    if (i === 0) {
+      if ((weekCounts[wk] || 0) >= 3) streak++;
+      // anders: huidige week nog niet af, kijk of vorige weken kloppen
+    } else {
+      if ((weekCounts[wk] || 0) >= 3) streak++;
+      else break;
+    }
+  }
+
+  var thisWeek = getWorkoutsThisWeek();
+  document.getElementById('streakChip').textContent =
+    '🔥 ' + streak + (streak !== 1 ? ' weken' : ' week') + ' op rij · ' + thisWeek + '/3 deze week';
+}
+
+function launchConfetti() {
+  var canvas = document.getElementById('confettiCanvas');
+  canvas.style.display = 'block';
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  var pieces = [];
+  var colors = ['#ff6b35','#ffb347','#4ade80','#60a5fa','#f472b6','#facc15'];
+  for (var i = 0; i < 120; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: -10 - Math.random() * 200,
+      w: 8 + Math.random() * 8,
+      h: 4 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 4,
+      vr: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  var startTime = Date.now();
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(function(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.vy += 0.05;
+    });
+    if (Date.now() - startTime < 3500) {
+      requestAnimationFrame(draw);
+    } else {
+      canvas.style.display = 'none';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  draw();
+}
+
+// ── Acties ───────────────────────────────────────────────────────────────────
+
+function toggleExercise(id, done) {
+  const data = getStorage();
+  if (!data[TODAY]) data[TODAY] = [];
+  if (done && data[TODAY].indexOf(id) === -1) data[TODAY].push(id);
+  if (!done) data[TODAY] = data[TODAY].filter(function(x) { return x !== id; });
+  saveStorage(data);
+}
+
+function updateProgress() {
+  const data = getStorage();
+  const completed = data[TODAY] || [];
+  const total = EXERCISES.length;
+  const done = completed.length;
+  const pct = Math.round((done / total) * 100);
+
+  // Ring
+  const offset = 238.76 - (pct / 100) * 238.76;
+  document.getElementById('progressRing').style.strokeDashoffset = offset;
+  document.getElementById('ringPct').textContent = pct + '%';
+
+  // Tekst
+  var headline, sub;
+  if (done === 0) {
+    headline = 'Klaar om te starten?';
+    sub = '3× per week trainen voor zichtbaar resultaat in 6–8 weken!';
+  } else if (done < total) {
+    headline = done + ' van ' + total + ' klaar 💪';
+    sub = 'Ga zo door — bijna daar!';
+  } else {
+    headline = 'Workout voltooid! 🎉';
+    sub = 'Je bent goed bezig. Rust morgen en kom overmorgen terug!';
+    saveWorkoutDay();
+  }
+  document.getElementById('progressHeadline').textContent = headline;
+  document.getElementById('progressSub').textContent = sub;
+
+  // Celebrate
+  if (done === total) document.getElementById('celebrate').classList.add('show');
+  else document.getElementById('celebrate').classList.remove('show');
+
+  buildWeekGrid();
+  buildStreakChip();
+}
+
+function saveWorkoutDay() {
+  var data = getStorage();
+  if (!data['done_days']) data['done_days'] = [];
+  var alreadySaved = data['done_days'].indexOf(TODAY) !== -1;
+  if (!alreadySaved) {
+    data['done_days'].push(TODAY);
+    saveStorage(data);
+    // Confetti als je de 3e workout van de week haalt!
+    var thisWeek = getWorkoutsThisWeek();
+    if (thisWeek === 3) {
+      launchConfetti();
+      document.getElementById('weekGoal').classList.add('show');
+    }
+  } else {
+    saveStorage(data);
+  }
+}
+
+function resetToday() {
+  const data = getStorage();
+  data[TODAY] = [];
+  data['done_days'] = (data['done_days'] || []).filter(function(x) { return x !== TODAY; });
+  saveStorage(data);
+  buildExerciseCards();
+  document.getElementById('celebrate').classList.remove('show');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+buildDateLabel();
+buildMotivatie();
+buildExerciseCards();
+buildWeekGrid();
+buildStreakChip();
+
+// Toon weekdoel banner als al gehaald deze week
+if (getWorkoutsThisWeek() >= 3) {
+  document.getElementById('weekGoal').classList.add('show');
+}
+</script>
+</body>
+</html>
